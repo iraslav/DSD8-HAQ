@@ -1,7 +1,7 @@
 ; T39 -- find the maximum and minimum of a block of memory (group T6)
 ; Block of 10 unsigned bytes at DMEM[0x20..0x29] written by a prologue:
 ;   3C 91 07 FE 40 00 7F 80 C5 12
-; Expected: max = FE -> LEDs, min = 00 -> 7-seg value, stored to DMEM[0x30]/[0x31].
+; Expected: max = FE -> LEDs, min = 00 -> 7-seg (digits 0-1 enabled), stored to DMEM[0x30]/[0x31].
         LDI  R7, 1
         LDI  R1, 0x20
         LDI  R2, 0x3C
@@ -55,4 +55,6 @@ NOTMIN: ADD  R1, R1, R7
         ST   [R1], R4
         OUT  0x02, R3
         OUT  0x10, R4
+        LDI  R2, 0x03       ; enable 7-seg digits 0 and 1
+        OUT  0x11, R2
         HLT
