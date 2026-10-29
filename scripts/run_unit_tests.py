@@ -44,6 +44,9 @@ def main():
             sys.exit(3)
 
     rtl_sources = [str(p) for p in sorted(RTL.glob("*.v"))]
+    # the reference peripheral models are needed by the system-level unit
+    # testbenches (tb_dsd8_cpu.v); they are simulation-only, never linted
+    rtl_sources += [str(p) for p in sorted((REPO_ROOT / "sim").glob("*.v"))]
 
     n_pass = 0
     results = []
