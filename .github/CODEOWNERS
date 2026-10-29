@@ -1,0 +1,25 @@
+# rtl ownership mirrors spec section 4.2 -- replace @memberA/B/C with real GitHub usernames
+/rtl/prog_counter.v   @memberA
+/rtl/instr_memory.v   @memberA
+/rtl/instr_decoder.v  @memberA
+/rtl/register_file.v  @memberB
+/rtl/alu.v            @memberB
+/rtl/flags_reg.v      @memberB
+/rtl/data_memory.v    @memberC
+/rtl/control_unit.v   @memberC
+/rtl/io_bus.v         @memberC
+/rtl/dsd8_cpu.v       @memberA @memberB @memberC
+/rtl/dsd8_top.v       @memberA @memberB @memberC
+/rtl/seg7_driver.v    @memberA @memberB @memberC
+/rtl/btn_debounce.v   @memberA @memberB @memberC
+# unit testbenches belong to the module owner
+/tb/tb_prog_counter.v   @memberA
+/tb/tb_instr_memory.v   @memberA
+/tb/tb_instr_decoder.v  @memberA
+/tb/tb_register_file.v  @memberB
+/tb/tb_alu_example.v    @memberB
+/tb/tb_alu_random.v     @memberB
+/tb/tb_flags_reg.v      @memberB
+/tb/tb_data_memory.v    @memberC
+/tb/tb_control_unit.v   @memberC
+/tb/tb_io_bus.v         @memberC

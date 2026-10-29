@@ -24,4 +24,8 @@ module dsd8_top (
     assign an     = 4'hF;    // all digits disabled
     assign halted = 1'b0;
 
+    // verilator lint_off UNUSEDSIGNAL
+    wire unused_top = &{1'b0, clk, rst_n, switches, buttons};
+    // verilator lint_on UNUSEDSIGNAL
+
 endmodule

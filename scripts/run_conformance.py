@@ -112,15 +112,19 @@ def first_diff(gold_path, dut_path):
 def main():
     ap = argparse.ArgumentParser(description="Run the DSD-8 conformance suite")
     ap.add_argument("filter", nargs="?", help="only run the test whose filename stem matches this")
+    ap.add_argument("--dir", default=str(TESTS_DIR),
+                    help="directory of .asm programs (default: tests/conformance)")
+    ap.add_argument("--report", help="also write the result table to this file")
     args = ap.parse_args()
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    asm_files = sorted(TESTS_DIR.glob("*.asm"))
+    tests_dir = pathlib.Path(args.dir).resolve()
+    asm_files = sorted(tests_dir.glob("*.asm"))
     if args.filter:
         asm_files = [p for p in asm_files if args.filter in p.stem]
 
     if not asm_files:
-        print(f"no test programs found under {TESTS_DIR}", file=sys.stderr)
+        print(f"no test programs found under {tests_dir}", file=sys.stderr)
         sys.exit(2)
 
     for tool in ("iverilog", "vvp"):
@@ -151,20 +155,20 @@ def main():
         except ToolNotFound as e:
             results.append((name, "ERROR", str(e)))
 
-    print()
-    print(f"{'TEST':30s} RESULT")
-    print("-" * 50)
+    out = ["", f"{'TEST':30s} RESULT", "-" * 50]
     n_pass = 0
     for name, status, detail in results:
-        print(f"{name:30s} {status}")
+        out.append(f"{name:30s} {status}")
         if status == "PASS":
             n_pass += 1
         elif detail:
             for line in detail.splitlines():
-                print(f"    {line}")
-    print("-" * 50)
-    print(f"{n_pass} / {len(results)} passed")
-    print()
+                out.append(f"    {line}")
+    out += ["-" * 50, f"{n_pass} / {len(results)} passed", ""]
+    print("\n".join(out))
+    if args.report:
+        pathlib.Path(args.report).write_text(
+            f"DSD-8 conformance report -- {tests_dir.name}\n" + "\n".join(out) + "\n")
 
     sys.exit(0 if n_pass == len(results) else 1)
 

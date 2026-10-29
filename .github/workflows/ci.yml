@@ -1,0 +1,56 @@
+# ci.yml -- three jobs certify every push and pull request (kickoff deck, slide 30).
+#   1 lint        verilator --lint-only -Wall      always runs, always gates
+#   2 unit        every tb/tb_*.v unit testbench   always runs, always gates
+#   3 conformance tb_dsd8.v vs every golden trace  informational on ordinary pushes
+#                                                  (authoritative on milestone tags:
+#                                                   see milestone.yml)
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Verilator
+        run: sudo apt-get update && sudo apt-get install -y verilator
+      - name: make lint
+        run: make lint
+
+  unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: make test
+        run: make test 2>&1 | tee unit.log
+      - name: Job summary
+        if: always()
+        run: |
+          echo '### Unit testbenches' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat unit.log >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  conformance:
+    runs-on: ubuntu-24.04
+    continue-on-error: true          # informational on ordinary pushes
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: make conformance extra
+        run: make conformance extra 2>&1 | tee conformance.log
+      - name: Job summary
+        if: always()
+        run: |
+          echo '### Conformance' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat conformance.log >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
