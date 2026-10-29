@@ -1,4 +1,41 @@
-# DSD-8 Processor -- starter repository
+# DSD-8 Processor
+
+An 8-bit Harvard microprocessor in Verilog, built to the frozen DSD-8
+specification: multi-cycle FSM (3 cycles per instruction, plus I/O stall
+cycles), eight registers, sixteen opcodes, memory-mapped I/O with an
+`io_ready` handshake, and a trace interface graded against a golden model.
+
+## Status
+
+| Check | Command | Result |
+|---|---|---|
+| Lint (Verilator `-Wall`, roots `dsd8_top` and `dsd8_cpu`) | `make lint` | clean |
+| Unit testbenches (one per module + ALU random + system + board) | `make test` | 12 / 12 PASS |
+| Conformance T01–T40 (+2 supplied samples) | `make conformance` | 42 / 42 PASS |
+| Extra directed + 10 seeded random programs | `make extra` | 17 / 17 PASS |
+| Injected-bug detection | `python3 scripts/mutation_check.py` | 20 / 20 caught |
+
+## Where things are
+
+| Deliverable | File |
+|---|---|
+| Step-by-step plan (M1–M6) | `doc/DELIVERABLES_PLAN.md` |
+| M1: ownership, microarchitecture, control table | `doc/m1/` |
+| Design report (decision record) | `doc/design_report.md` |
+| Verification report (coverage, closure, traceability) | `doc/verification_report.md` |
+| Bug log | `doc/bug_log.md` |
+| Conformance report | `doc/conformance_report.txt` (`make report`) |
+| Partner design review | `doc/design_review.md` |
+| Board demo (Basys 3) | `doc/demo_guide.md`, `fpga/basys3.xdc` |
+| Oral-defence study guide | `doc/defence_prep.md` |
+
+Before submission, fill in the member names in `doc/m1/team_and_ownership.md`
+and the GitHub usernames in `.github/CODEOWNERS`.
+
+---
+
+# Starter repository notes (as distributed)
+
 
 Base code for the DSD-8 Processor project (Digital System Design). This
 repository is the CI/certification and verification infrastructure the
