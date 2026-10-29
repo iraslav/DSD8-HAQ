@@ -16,6 +16,11 @@ if ! command -v verilator >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "Linting rtl/*.v with: verilator --lint-only -Wall"
-verilator --lint-only -Wall --top-module dsd8_top rtl/*.v
+# Lint from BOTH roots: dsd8_top (board build) and dsd8_cpu (the core the
+# conformance harness instantiates). Linting dsd8_top alone silently skipped
+# the whole core while dsd8_top was still a stub -- see doc/bug_log.md #3.
+for top in dsd8_top dsd8_cpu; do
+    echo "Linting rtl/*.v with: verilator --lint-only -Wall --top-module $top"
+    verilator --lint-only -Wall --top-module "$top" rtl/*.v
+done
 echo "lint: clean"

@@ -85,9 +85,20 @@ def compile_and_simulate_dut(hex_path, work_dir, test_name):
     if r.returncode != 0:
         return None, f"iverilog compile failed:\n{r.stdout}{r.stderr}"
 
-    r = run(["vvp", str(sim_bin)])
+    # iverilog's -P only overrides parameters of ROOT modules, so the
+    # hierarchical -Ptb_dsd8.imem.IMAGE above is silently ignored and
+    # instr_memory falls back to its default IMAGE = "program.hex", resolved
+    # relative to the simulator's working directory (doc/bug_log.md #4).
+    # Run each test in its own directory holding the image as program.hex.
+    run_dir = work_dir / (test_name + ".run")
+    run_dir.mkdir(exist_ok=True)
+    shutil.copyfile(hex_path, run_dir / "program.hex")
+    r = run(["vvp", str(sim_bin)], cwd=str(run_dir))
     if r.returncode != 0:
         return None, f"vvp simulation failed:\n{r.stdout}{r.stderr}"
+    if "Unable to open" in r.stdout + r.stderr or "MAX_CYCLES" in r.stdout:
+        # surface harness warnings instead of a bare length mismatch
+        print(f"  [{test_name}] harness: " + (r.stdout + r.stderr).strip().splitlines()[0])
 
     return dut_trace, None
 

@@ -15,13 +15,13 @@ module flags_reg (
     output reg  [3:0] flags_out     // {Z,N,C,V} architectural state
 );
 
-    // Reset state: Z = N = C = V = 0 (Section 2.5, R6) -- already correct below.
+    // Reset state: Z = N = C = V = 0 (Section 2.5, R6). Written only when
+    // flags_we is high -- i.e. only by the eight flag-setting instructions.
     always @(posedge clk) begin
         if (!rst_n) begin
             flags_out <= 4'b0000;
-        end else begin
-            // TODO: if (flags_we) flags_out <= flags_in;
-            flags_out <= flags_out;
+        end else if (flags_we) begin
+            flags_out <= flags_in;
         end
     end
 
