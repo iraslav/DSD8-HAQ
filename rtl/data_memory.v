@@ -27,18 +27,28 @@ module data_memory (
 );
 
     reg [7:0] mem [0:255];
+    integer i;
 
-    always @(posedge clk) begin
-        // TODO: if (we) mem[addr] <= wdata;
+    // R16 / R6 -- "cleared by reset" without a reset port: design decision
+    // (a) from the stub. The array is initialised to 0x00 at time zero,
+    // which every simulator honours and which FPGA block/distributed RAM
+    // honours as its configuration value. Recorded in doc/design_report.md
+    // (decision D3) together with its limitation: a second reset during a
+    // run does not re-clear the memory.
+    initial begin
+        for (i = 0; i < 256; i = i + 1) begin
+            mem[i] = 8'h00;
+        end
     end
 
-    // TODO: assign rdata = mem[addr];
-    assign rdata = 8'h00;
+    // synchronous write (ST commits at the rising edge ending its commit cycle)
+    always @(posedge clk) begin
+        if (we) begin
+            mem[addr] <= wdata;
+        end
+    end
 
-    // verilator lint_off UNUSEDSIGNAL
-    wire [7:0] unused_addr  = addr;
-    wire [7:0] unused_wdata = wdata;
-    wire       unused_we    = we;
-    // verilator lint_on UNUSEDSIGNAL
+    // combinational read, so LD completes in the cycle its address is valid
+    assign rdata = mem[addr];
 
 endmodule

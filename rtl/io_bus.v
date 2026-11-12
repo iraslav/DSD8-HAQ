@@ -44,36 +44,52 @@ module io_bus (
     input  wire        periph_ready
 );
 
-    // Safe placeholder: no peripheral ever finishes (io_ready stays low
-    // forever), so this compiles and lints clean but will hang the CPU
-    // the first time it is used. Implement the decode + handshake per
-    // Section 7.1 before wiring this into dsd8_top or tb_dsd8.v.
 
-    assign io_rdata     = 8'h00;
-    assign io_ready      = 1'b0;
+    // Ports 0x00-0x1F are decoded here (switches, buttons, LEDs, 7-seg);
+    // every port from 0x20 up is forwarded to the peripheral side
+    // (sim/peripherals.v in simulation: UART 0x20-0x22, timer 0x30-0x31,
+    // SLOW_ECHO 0x40; unmapped ports there read 0x00 and never stall).
+    wire request = io_rd | io_wr;
+    wire is_ext  = (io_port >= 8'h20);
+
+    // ---- forwarded requests: only for the external range ----
     assign periph_port  = io_port;
     assign periph_wdata = io_wdata;
-    assign periph_rd    = 1'b0;
-    assign periph_wr    = 1'b0;
+    assign periph_rd    = io_rd & is_ext;
+    assign periph_wr    = io_wr & is_ext;
 
+    // ---- local read data (unmapped / write-only ports read 0x00, R21) ----
+    reg [7:0] local_rdata;
+    always @(*) begin
+        case (io_port)
+            8'h00:   local_rdata = switches;
+            8'h01:   local_rdata = {3'b000, buttons};
+            default: local_rdata = 8'h00;
+        endcase
+    end
+
+    // ---- handshake (R19-R21) ----
+    // Local ports complete in the cycle they are requested; external ports
+    // complete when the peripheral says so. io_ready is never asserted
+    // without an active request (R20), and no local port ever stalls.
+    assign io_ready = is_ext ? (request & periph_ready) : request;
+    assign io_rdata = (io_rd & io_ready) ? (is_ext ? periph_rdata : local_rdata) : 8'h00;
+
+    // ---- latched output registers: written at the edge that completes OUT ----
+    wire local_write = io_wr & ~is_ext;   // local ports are always ready
     always @(posedge clk) begin
         if (!rst_n) begin
             leds       <= 8'h00;
             seg_value  <= 8'h00;
             seg_enable <= 8'h00;
-        end else begin
-            // TODO: decode io_port/io_wr and update leds/seg_value/seg_enable
-            leds       <= leds;
-            seg_value  <= seg_value;
-            seg_enable <= seg_enable;
+        end else if (local_write) begin
+            case (io_port)
+                8'h02:   leds       <= io_wdata;
+                8'h10:   seg_value  <= io_wdata;
+                8'h11:   seg_enable <= io_wdata;
+                default: ;                       // write to unmapped port: discarded
+            endcase
         end
     end
-
-    // verilator lint_off UNUSEDSIGNAL
-    wire [7:0] unused_switches   = switches;
-    wire [4:0] unused_buttons    = buttons;
-    wire [7:0] unused_periph_rd  = periph_rdata;
-    wire       unused_periph_rdy = periph_ready;
-    // verilator lint_on UNUSEDSIGNAL
 
 endmodule
