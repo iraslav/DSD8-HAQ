@@ -1,0 +1,12 @@
+# Keep line endings stable when members commit from Windows:
+# shell scripts and hooks must stay LF for the Linux CI runners,
+# Windows batch files stay CRLF, everything else is normalised to LF.
+*           text=auto
+*.sh        text eol=lf
+githooks/*  text eol=lf
+Makefile    text eol=lf
+*.bat       text eol=crlf
+*.hex       text eol=lf
+*.asm       text eol=lf
+*.v         text eol=lf
+*.py        text eol=lf
