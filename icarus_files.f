@@ -1,0 +1,14 @@
+rtl/alu.v
+rtl/btn_debounce.v
+rtl/control_unit.v
+rtl/data_memory.v
+rtl/dsd8_cpu.v
+rtl/dsd8_top.v
+rtl/flags_reg.v
+rtl/instr_decoder.v
+rtl/instr_memory.v
+rtl/io_bus.v
+rtl/prog_counter.v
+rtl/register_file.v
+rtl/seg7_driver.v
+sim/peripherals.v
