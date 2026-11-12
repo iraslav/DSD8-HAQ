@@ -16,6 +16,17 @@ if ! command -v verilator >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "Linting rtl/*.v with: verilator --lint-only -Wall"
-verilator --lint-only -Wall --top-module dsd8_top rtl/*.v
+# Lint from every root: dsd8_top (board build), dsd8_cpu (the core the
+# conformance harness instantiates) and dsd8_secure_top (enclave extension). Linting dsd8_top alone silently skipped
+# the whole core while dsd8_top was still a stub -- see doc/bug_log.md #3.
+# A root whose file is not in the repository yet (e.g. the enclave extension
+# before it is pushed) is skipped, so the team can push in stages.
+for top in dsd8_top dsd8_cpu dsd8_secure_top; do
+    if [ ! -f "rtl/$top.v" ]; then
+        echo "skipping $top (rtl/$top.v not present yet)"
+        continue
+    fi
+    echo "Linting rtl/*.v with: verilator --lint-only -Wall --top-module $top"
+    verilator --lint-only -Wall --top-module "$top" rtl/*.v
+done
 echo "lint: clean"
