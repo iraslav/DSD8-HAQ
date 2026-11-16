@@ -1,0 +1,73 @@
+DSD-8 conformance report -- conformance
+
+TEST                           RESULT
+--------------------------------------------------
+T01_ldi_each_register          PASS
+T02_ldi_boundaries             PASS
+T03_mov_every_pair             PASS
+T04_ldi_keeps_flags            PASS
+T05_nop                        PASS
+T06_write_then_read            PASS
+T07_same_reg_both_ports        PASS
+T08_rd_rs1_rs2_same            PASS
+T09_dmem_uninitialised         PASS
+T10_store_load                 PASS
+T11_address_is_contents        PASS
+T12_store_reg_to_itself        PASS
+T13_walking_ones               PASS
+T14_ld_keeps_flags             PASS
+T15_add_carry_boundary         PASS
+T16_sub_borrow                 PASS
+T17_signed_overflow            PASS
+T18_logic_flags                PASS
+T19_shift_carry                PASS
+T20_shr_logical                PASS
+T21_cmp_no_write               PASS
+T22_arithmetic_shift           PASS
+T23_jmp                        PASS
+T24_branch_taken               PASS
+T25_branch_not_taken           PASS
+T26_branch_to_self             PASS
+T27_branch_keeps_flags         PASS
+T28_unsigned_order             PASS
+T29_signed_compare             PASS
+T30_loop_256                   PASS
+T31_io_vs_memory_spaces        PASS
+T32_unmapped_ports             PASS
+T33_io_memory_isolation        PASS
+T34_slow_echo_handshake        PASS
+T35_io_keeps_flags             PASS
+T36_multiply                   PASS
+T37_popcount                   PASS
+T38_bubble_sort                PASS
+T39_max_min                    PASS
+T40_uart_polled                PASS
+sample01_multiply              PASS
+sample02_popcount              PASS
+--------------------------------------------------
+42 / 42 passed
+
+DSD-8 conformance report -- extra
+
+TEST                           RESULT
+--------------------------------------------------
+R00001_random                  PASS
+R00002_random                  PASS
+R00003_random                  PASS
+R00007_random                  PASS
+R00011_random                  PASS
+R00042_random                  PASS
+R00099_random                  PASS
+R00123_random                  PASS
+R02026_random                  PASS
+R31337_random                  PASS
+X01_alu_flag_corners           PASS
+X02_memory_roundtrip           PASS
+X03_branch_both_sides          PASS
+X04_io_slow_readback           PASS
+X05_not_pseudo                 PASS
+X06_every_register_every_position PASS
+X07_pc_wrap                    PASS
+--------------------------------------------------
+17 / 17 passed
+
