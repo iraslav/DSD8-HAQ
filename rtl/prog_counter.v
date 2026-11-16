@@ -10,10 +10,7 @@
 //   - the increment wraps within the 9-bit address range
 //   - when pc_en is low, pc holds its value (this is how HLT freezes it)
 //
-// The body below is an unimplemented placeholder: it compiles and
-// drives every output on every path (no inferred latches), but it does
-// not do the above yet. Replace the always block -- do not just delete
-// this comment and leave the placeholder in place.
+// Verified by tb/tb_prog_counter.v.
 
 module prog_counter (
     input  wire       clk,
@@ -24,11 +21,16 @@ module prog_counter (
     output reg  [8:0] pc
 );
 
+    // Synchronous active-low reset to 0x000 (R6, R7). When pc_en is high
+    // the PC either loads the absolute branch target or increments; the
+    // 9-bit add wraps 0x1FF -> 0x000 by itself. When pc_en is low the PC
+    // holds -- this is both how an instruction keeps its own address for
+    // all of its cycles and how HLT freezes the machine (R8).
     always @(posedge clk) begin
         if (!rst_n) begin
             pc <= 9'h000;
-        end else begin
-            pc <= pc;   // TODO: implement pc_en / pc_load / increment per Section 2.5
+        end else if (pc_en) begin
+            pc <= pc_load ? branch_addr : pc + 9'd1;
         end
     end
 

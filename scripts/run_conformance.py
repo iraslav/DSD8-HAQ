@@ -67,28 +67,57 @@ def assemble_and_simulate_gold(asm_path, work_dir):
     return hex_path, gold_path, None
 
 
-def compile_and_simulate_dut(hex_path, work_dir, test_name):
-    dut_trace = work_dir / (test_name + ".dut.trace")
-    sim_bin = work_dir / (test_name + ".vvp")
+_HARNESS_BIN = None
 
+
+def compile_harness(work_dir):
+    """Compile tb_dsd8 + RTL + peripherals ONCE; every test reuses the binary.
+
+    No -P overrides are used: iverilog's -P cannot reach the hierarchical
+    tb_dsd8.imem.IMAGE (doc/bug_log.md #4), and Icarus 0.9.x has no -P at
+    all (bug log #8). The harness's own defaults are used instead --
+    IMAGE = "program.hex" and TRACE_FILE = "dut.trace" -- both resolved
+    relative to vvp's working directory, which is a per-test directory.
+    """
+    global _HARNESS_BIN
+    if _HARNESS_BIN is not None:
+        return _HARNESS_BIN, None
     sources = [str(RTL / f) for f in RTL_SOURCES] + [str(PERIPHERALS), str(TB)]
     for src in sources:
         if not pathlib.Path(src).exists():
             return None, f"missing source file: {src}"
-
-    compile_cmd = [
-        "iverilog", "-g2005", "-o", str(sim_bin),
-        f"-Ptb_dsd8.imem.IMAGE=\"{hex_path}\"",
-        f"-Ptb_dsd8.TRACE_FILE=\"{dut_trace}\"",
-    ] + sources
-    r = run(compile_cmd)
+    sim_bin = work_dir / "tb_dsd8.vvp"
+    r = run(["iverilog", "-g2005", "-o", str(sim_bin)] + sources)
     if r.returncode != 0:
         return None, f"iverilog compile failed:\n{r.stdout}{r.stderr}"
+    _HARNESS_BIN = sim_bin
+    return sim_bin, None
 
-    r = run(["vvp", str(sim_bin)])
+
+def compile_and_simulate_dut(hex_path, work_dir, test_name):
+    sim_bin, err = compile_harness(work_dir)
+    if err:
+        return None, err
+
+    run_dir = work_dir / (test_name + ".run")
+    run_dir.mkdir(exist_ok=True)
+    shutil.copyfile(hex_path, run_dir / "program.hex")
+    trace_in_run_dir = run_dir / "dut.trace"
+    if trace_in_run_dir.exists():
+        trace_in_run_dir.unlink()                  # never compare a stale trace
+    r = run(["vvp", str(sim_bin)], cwd=str(run_dir))
     if r.returncode != 0:
         return None, f"vvp simulation failed:\n{r.stdout}{r.stderr}"
+    if "Unable to open" in r.stdout + r.stderr or "MAX_CYCLES" in r.stdout:
+        # surface harness warnings instead of a bare length mismatch
+        print(f"  [{test_name}] harness: " + (r.stdout + r.stderr).strip().splitlines()[0])
 
+    # keep a copy next to the golden trace, as before
+    dut_trace = work_dir / (test_name + ".dut.trace")
+    if trace_in_run_dir.exists():
+        shutil.copyfile(trace_in_run_dir, dut_trace)
+    elif dut_trace.exists():
+        dut_trace.unlink()
     return dut_trace, None
 
 
@@ -112,15 +141,19 @@ def first_diff(gold_path, dut_path):
 def main():
     ap = argparse.ArgumentParser(description="Run the DSD-8 conformance suite")
     ap.add_argument("filter", nargs="?", help="only run the test whose filename stem matches this")
+    ap.add_argument("--dir", default=str(TESTS_DIR),
+                    help="directory of .asm programs (default: tests/conformance)")
+    ap.add_argument("--report", help="also write the result table to this file")
     args = ap.parse_args()
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    asm_files = sorted(TESTS_DIR.glob("*.asm"))
+    tests_dir = pathlib.Path(args.dir).resolve()
+    asm_files = sorted(tests_dir.glob("*.asm"))
     if args.filter:
         asm_files = [p for p in asm_files if args.filter in p.stem]
 
     if not asm_files:
-        print(f"no test programs found under {TESTS_DIR}", file=sys.stderr)
+        print(f"no test programs found under {tests_dir}", file=sys.stderr)
         sys.exit(2)
 
     for tool in ("iverilog", "vvp"):
@@ -151,20 +184,20 @@ def main():
         except ToolNotFound as e:
             results.append((name, "ERROR", str(e)))
 
-    print()
-    print(f"{'TEST':30s} RESULT")
-    print("-" * 50)
+    out = ["", f"{'TEST':30s} RESULT", "-" * 50]
     n_pass = 0
     for name, status, detail in results:
-        print(f"{name:30s} {status}")
+        out.append(f"{name:30s} {status}")
         if status == "PASS":
             n_pass += 1
         elif detail:
             for line in detail.splitlines():
-                print(f"    {line}")
-    print("-" * 50)
-    print(f"{n_pass} / {len(results)} passed")
-    print()
+                out.append(f"    {line}")
+    out += ["-" * 50, f"{n_pass} / {len(results)} passed", ""]
+    print("\n".join(out))
+    if args.report:
+        pathlib.Path(args.report).write_text(
+            f"DSD-8 conformance report -- {tests_dir.name}\n" + "\n".join(out) + "\n")
 
     sys.exit(0 if n_pass == len(results) else 1)
 
