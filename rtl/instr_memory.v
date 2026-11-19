@@ -1,5 +1,5 @@
 // instr_memory.v -- 512 x 16 read-only memory, loaded by $readmemh
-// Owner: member A
+// Owner: member Abdul Qadeer
 // Spec: Section 5.4. Port list is FROZEN.
 
 module instr_memory #(
